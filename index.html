@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Redshift Daisy | Professional ML Analysis</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    * { font-family: 'Inter', sans-serif; }
+    html, body, #app { height: 100%; margin: 0; }
+    
+    .sidebar { 
+      transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+    }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    
+    .msg-user { 
+      background: linear-gradient(135deg, rgba(99,102,241,.08) 0%, rgba(139,92,246,.08) 100%);
+      border: 1px solid rgba(99,102,241,.2);
+      box-shadow: 0 2px 8px rgba(99,102,241,.1);
+    }
+    .msg-bot { 
+      background: white;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    
+    .resize-handle {
+      width: 6px;
+      background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+      cursor: col-resize;
+      position: relative;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .resize-handle:hover {
+      background: linear-gradient(to right, transparent, #6366f1, transparent);
+      width: 8px;
+    }
+    .resize-handle::before {
+      content: '⋮';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #9ca3af;
+      font-size: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .resize-handle:hover::before { opacity: 1; }
+    
+    .status-badge {
+      position: relative;
+      overflow: hidden;
+    }
+    .status-badge::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+    .status-badge:hover::before { left: 100%; }
+    
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0,0,0,.12);
+    }
+    
+    .gradient-border {
+      position: relative;
+      background: white;
+      border-radius: 12px;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      padding: 2px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .professional-shadow {
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+    }
+    
+    .chat-input-container {
+      position: sticky;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid #e5e7eb;
+      padding: 1rem;
+      margin: 0 -1.5rem -1.5rem -1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .dynamic-island {
+      max-width: 90%;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(99, 102, 241, 0.2);
+      border-radius: 28px;
+      padding: 1rem 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .dynamic-island:focus-within {
+      box-shadow: 0 25px 80px rgba(99, 102, 241, 0.25), 0 0 0 2px rgba(99, 102, 241, 0.4) inset;
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-4px);
+    }
+    
+    .dynamic-island input {
+      border: none;
+      background: transparent;
+      outline: none;
+      flex: 1;
+      font-size: 0.9rem;
+      order: 2;
+    }
+    
+    .dynamic-island button {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 20%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      order: 1;
+    }
+    
+    .dynamic-island button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    
+    .dynamic-island button:active {
+      transform: scale(1);
+    }
+    
+    #topBarSection {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(0);
+      opacity: 1;
+      max-height: 200px;
+      overflow: hidden;
+    }
+    
+    #topBarSection.hidden {
+      transform: translateY(-100%);
+      opacity: 0;
+      max-height: 0;
+      margin-bottom: 0;
+    }
+    
+    /* Thinking animation styles */
+    .thinking-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(99, 102, 241, 0.1);
+      width: fit-content;
+      margin-top: 4px;
+    }
+    
+    .thinking-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6366f1;
+      animation: thinking-pulse 1.5s infinite ease-in-out;
+    }
+    
+    .thinking-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .thinking-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes thinking-pulse {
+      0%, 60%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+      }
+      30% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+    
+    .thinking-text {
+      font-size: 0.8rem;
+      color: #6366f1;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans antialiased">
+  <div id="app" class="flex h-full">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-72 bg-white z-40">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <span class="text-2xl">🌼</span>
+          </div>
+          <div>
+            <div class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Redshift Daisy</div>
+            <div class="text-xs text-gray-500 font-medium">ML-Powered Spectral Analysis</div>
+          </div>
+        </div>
+        <button id="closeSidebar" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <nav class="p-4 space-y-1">
+        <button class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 transition-all group" id="homeBtn">
+          <i data-lucide="home" class="w-5 h-5 text-gray-500 group-hover:text-indigo-600"></i>
+          <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-600">Home</span>
+        </button>
+        <button class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 transition-all group" id="analysisBtn">
+          <i data-lucide="bar-chart-3" class="w-5 h-5 text-gray-500 group-hover:text-indigo-600"></i>
+          <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-600">Analysis</span>
+        </button>
+        <button class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 transition-all group" id="historyBtn">
+          <i data-lucide="history" class="w-5 h-5 text-gray-500 group-hover:text-indigo-600"></i>
+          <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-600">History</span>
+        </button>
+        <button class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 transition-all group" id="filesBtn">
+          <i data-lucide="folder" class="w-5 h-5 text-gray-500 group-hover:text-indigo-600"></i>
+          <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-600">Files</span>
+        </button>
+        <button class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 transition-all group" id="settingsBtn">
+          <i data-lucide="settings" class="w-5 h-5 text-gray-500 group-hover:text-indigo-600"></i>
+          <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-600">Settings</span>
+        </button>
+      </nav>
+      
+      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div class="text-xs text-gray-600 mb-2 font-medium">System Status</div>
+        <div class="flex items-center gap-2 text-xs mb-3">
+          <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span class="text-gray-700 font-medium">Backend Connected</span>
+        </div>
+        <div class="text-xs text-center text-gray-500 pt-2 border-t border-gray-200">
+          Made with <span class="text-red-500">❤️</span> from UWC
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main id="mainContent" class="flex-1 flex flex-col min-h-screen transition-all duration-300 ml-0">
+      <header class="bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex items-center justify-between flex-shrink-0 professional-shadow sticky top-0 z-30">
+        <div class="flex items-center gap-4">
+          <button id="menuToggle" class="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 class="text-xl font-bold text-gray-800">Astronomical Redshift Predictor</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="px-3 py-1.5 bg-indigo-50 rounded-full text-xs font-semibold text-indigo-600">v2.0</div>
+        </div>
+      </header>
+
+      <!-- Top bar toggle button -->
+      <button id="topBarToggle" class="absolute left-1/2 transform -translate-x-1/2 bg-white border-2 border-gray-200 rounded-b-xl px-4 py-1.5 shadow-lg hover:shadow-xl transition-all hover:bg-gray-50 z-20 flex items-center gap-2 top-[64px]">
+        <i data-lucide="chevron-up" id="topBarIcon" class="w-4 h-4 text-gray-600"></i>
+        <span class="text-xs font-semibold text-gray-600" id="topBarText">Hide Controls</span>
+      </button>
+
+      <!-- File status & controls section -->
+      <section id="topBarSection" class="bg-white/80 backdrop-blur-xl border-b border-gray-100 professional-shadow transition-all duration-300">
+        <div class="px-6 py-5 flex items-center gap-4 flex-wrap">
+          <span class="text-sm font-bold text-gray-700">Data Status:</span>
+          <div id="metaStatus" class="status-badge flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-red-50 text-red-700 border-2 border-red-200">
+            <i data-lucide="file" class="w-3.5 h-3.5"></i> metadata.npy
+          </div>
+          <div id="specStatus" class="status-badge flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-red-50 text-red-700 border-2 border-red-200">
+            <i data-lucide="file" class="w-3.5 h-3.5"></i> spectra.npy
+          </div>
+
+          <div class="ml-auto flex items-center gap-3">
+            <input id="metadataInput" type="file" accept=".npy" class="hidden" />
+            <input id="spectraInput" type="file" accept=".npy" class="hidden" />
+            <button id="uploadMetaBtn" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+              <i data-lucide="upload" class="w-4 h-4"></i> Upload Metadata
+            </button>
+            <button id="uploadSpecBtn" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+              <i data-lucide="upload" class="w-4 h-4"></i> Upload Spectra
+            </button>
+            <button id="sendToServerBtn" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-sm font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+              <i data-lucide="zap" class="w-4 h-4"></i> Run Analysis
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- main area -->
+      <div class="flex-1 flex overflow-hidden">
+        <section id="leftPane" class="flex flex-col bg-transparent" style="flex: 1 1 60%;">
+          <div class="flex-1 flex flex-col overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-6" id="messagesBox">
+              <div id="welcomeCard" class="gradient-border p-10 animate-fade-in">
+                <div class="relative z-10 text-center">
+                  <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl">
+                    <span class="text-4xl">🌌</span>
+                  </div>
+                  <h2 class="text-5xl font-extrabold mb-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Astronomical Redshift Predictor
+                  </h2>
+                  <p class="text-gray-600 text-lg mb-6 max-w-2xl mx-auto leading-relaxed">
+                    Upload your <code class="px-2 py-1 bg-gray-100 rounded text-indigo-600 font-mono text-sm">metadata.npy</code> and <code class="px-2 py-1 bg-gray-100 rounded text-purple-600 font-mono text-sm">spectra.npy</code> files to begin advanced ML-powered redshift analysis.
+                  </p>
+                  <div class="flex items-center justify-center gap-4 text-sm text-gray-500">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                      <span>Random Forest</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                      <span>Neural Networks</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                      <span>PCA Analysis</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Chat input inside left pane -->
+            <div class="chat-input-container">
+              <div class="dynamic-island">
+                <input type="text" id="msgInput" placeholder="Ask about the analysis or request specific visualizations..." />
+                <button id="msgSendBtn">
+                  <i data-lucide="send" class="w-4 h-4 text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div id="resizeHandle" class="resize-handle flex-shrink-0 hidden"></div>
+
+        <aside id="resultsPane" class="bg-white overflow-y-auto p-6 hidden border-l border-gray-200" style="flex: 1 1 40%;">
+          <div class="flex items-start justify-between mb-6 pb-4 border-b border-gray-200">
+            <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i>
+              </div>
+              Analysis Results
+            </h3>
+            <button id="closeResults" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <div id="numericSummary" class="grid grid-cols-2 gap-4 mb-6"></div>
+          <div id="pcaPlotWrap" class="hidden"></div>
+          <div id="logBox" class="bg-gray-50 rounded-xl p-4 border border-gray-200 text-sm text-gray-700"></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const BACKEND = 'http://127.0.0.1:5000';
+    let files = { metadata: null, spectra: null };
+    let messages = [];
+    let isResizing = false;
+    let isTopBarVisible = true;
+    let thinkingIndicatorId = null;
+
+    // DOM Elements
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const menuToggle = document.getElementById('menuToggle');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const uploadMetaBtn = document.getElementById('uploadMetaBtn');
+    const uploadSpecBtn = document.getElementById('uploadSpecBtn');
+    const metadataInput = document.getElementById('metadataInput');
+    const spectraInput = document.getElementById('spectraInput');
+    const metaStatus = document.getElementById('metaStatus');
+    const specStatus = document.getElementById('specStatus');
+    const sendToServerBtn = document.getElementById('sendToServerBtn');
+    const messagesBox = document.getElementById('messagesBox');
+    const msgInput = document.getElementById('msgInput');
+    const msgSendBtn = document.getElementById('msgSendBtn');
+    const resultsPane = document.getElementById('resultsPane');
+    const closeResults = document.getElementById('closeResults');
+    const numericSummary = document.getElementById('numericSummary');
+    const pcaPlotWrap = document.getElementById('pcaPlotWrap');
+    const logBox = document.getElementById('logBox');
+    const welcomeCard = document.getElementById('welcomeCard');
+    const leftPane = document.getElementById('leftPane');
+    const resizeHandle = document.getElementById('resizeHandle');
+    const topBarSection = document.getElementById('topBarSection');
+    const topBarToggle = document.getElementById('topBarToggle');
+    const topBarIcon = document.getElementById('topBarIcon');
+    const topBarText = document.getElementById('topBarText');
+
+    // Initialize sidebar margin
+    function updateSidebarMargin() {
+      if (sidebar.classList.contains('collapsed')) {
+        mainContent.style.marginLeft = '0';
+      } else {
+        mainContent.style.marginLeft = '18rem';
+      }
+    }
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('collapsed');
+      updateSidebarMargin();
+    }
+
+    function toggleTopBar() {
+      isTopBarVisible = !isTopBarVisible;
+      if (isTopBarVisible) {
+        topBarSection.classList.remove('hidden');
+        topBarIcon.setAttribute('data-lucide', 'chevron-up');
+        topBarText.textContent = 'Hide Controls';
+      } else {
+        topBarSection.classList.add('hidden');
+        topBarIcon.setAttribute('data-lucide', 'chevron-down');
+        topBarText.textContent = 'Show Controls';
+      }
+      lucide.createIcons();
+    }
+
+    // Event Listeners
+    menuToggle.addEventListener('click', toggleSidebar);
+    closeSidebar.addEventListener('click', toggleSidebar);
+    topBarToggle.addEventListener('click', toggleTopBar);
+
+    // Initialize positions
+    updateSidebarMargin();
+
+    let leftWidth = 60;
+    let rightWidth = 40;
+
+    resizeHandle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      
+      const container = leftPane.parentElement;
+      const containerRect = container.getBoundingClientRect();
+      const mouseX = e.clientX - containerRect.left;
+      const percentage = (mouseX / containerRect.width) * 100;
+      
+      if (percentage > 20 && percentage < 80) {
+        leftWidth = percentage;
+        rightWidth = 100 - percentage;
+        leftPane.style.flex = `1 1 ${leftWidth}%`;
+        resultsPane.style.flex = `1 1 ${rightWidth}%`;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+
+    function updateFileStatus() {
+      if (files.metadata) {
+        metaStatus.className = 'status-badge flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-green-50 text-green-700 border-2 border-green-200';
+        metaStatus.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> metadata.npy';
+      } else {
+        metaStatus.className = 'status-badge flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-red-50 text-red-700 border-2 border-red-200';
+        metaStatus.innerHTML = '<i data-lucide="file" class="w-3.5 h-3.5"></i> metadata.npy';
+      }
+      
+      if (files.spectra) {
+        specStatus.className = 'status-badge flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-green-50 text-green-700 border-2 border-green-200';
+        specStatus.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> spectra.npy';
+      } else {
+        specStatus.className = 'status-badge flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-red-50 text-red-700 border-2 border-red-200';
+        specStatus.innerHTML = '<i data-lucide="file" class="w-3.5 h-3.5"></i> spectra.npy';
+      }
+      lucide.createIcons();
+    }
+
+    function addMessage(type, content) {
+      messages.push({ type, content });
+      renderMessages();
+    }
+
+    function showThinkingIndicator() {
+      // Remove any existing thinking indicator
+      hideThinkingIndicator();
+      
+      // Add thinking indicator to messages
+      const thinkingHTML = `
+        <div class="flex gap-4 mb-6 animate-fade-in">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg bg-gradient-to-br from-purple-500 to-pink-600">
+            <span class="text-white text-sm font-bold">🤖</span>
+          </div>
+          <div class="max-w-2xl rounded-2xl px-5 py-4 msg-bot">
+            <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">Thinking...</p>
+            <div class="thinking-indicator">
+              <div class="thinking-dot"></div>
+              <div class="thinking-dot"></div>
+              <div class="thinking-dot"></div>
+              <span class="thinking-text">Processing</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      messagesBox.innerHTML += thinkingHTML;
+      messagesBox.scrollTop = messagesBox.scrollHeight;
+      
+      // Store the ID of the thinking indicator so we can remove it later
+      thinkingIndicatorId = Date.now();
+      return thinkingIndicatorId;
+    }
+
+    function hideThinkingIndicator() {
+      // Find and remove the thinking indicator
+      const thinkingIndicators = messagesBox.querySelectorAll('.thinking-indicator');
+      thinkingIndicators.forEach(indicator => {
+        indicator.closest('.flex.gap-4.mb-6').remove();
+      });
+      thinkingIndicatorId = null;
+    }
+
+    function renderMessages() {
+      if (messages.length === 0) {
+        welcomeCard.style.display = 'block';
+        return;
+      }
+      
+      welcomeCard.style.display = 'none';
+      
+      const messagesHTML = messages.map(m => {
+        const isUser = m.type === 'user';
+        return `
+          <div class="flex gap-4 mb-6 animate-fade-in ${isUser ? 'flex-row-reverse' : ''}">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg ${isUser ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-purple-500 to-pink-600'}">
+              <span class="text-white text-sm font-bold">${isUser ? 'U' : '🤖'}</span>
+            </div>
+            <div class="max-w-2xl rounded-2xl px-5 py-4 ${isUser ? 'msg-user' : 'msg-bot'}">
+              <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(m.content)}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      messagesBox.innerHTML = messagesHTML + '<div id="welcomeCard" style="display:none;"></div>';
+      messagesBox.scrollTop = messagesBox.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    uploadMetaBtn.addEventListener('click', () => metadataInput.click());
+    uploadSpecBtn.addEventListener('click', () => spectraInput.click());
+
+    metadataInput.addEventListener('change', e => { 
+      files.metadata = e.target.files[0]; 
+      updateFileStatus(); 
+      addMessage('bot', `✅ Metadata file loaded successfully: ${files.metadata.name}\nSize: ${(files.metadata.size / 1024).toFixed(2)} KB`); 
+    });
+    
+    spectraInput.addEventListener('change', e => { 
+      files.spectra = e.target.files[0]; 
+      updateFileStatus(); 
+      addMessage('bot', `✅ Spectra file loaded successfully: ${files.spectra.name}\nSize: ${(files.spectra.size / 1024).toFixed(2)} KB`); 
+    });
+
+    sendToServerBtn.addEventListener('click', async () => {
+      if (!files.metadata || !files.spectra) { 
+        addMessage('bot', '⚠️ Please upload both metadata.npy and spectra.npy files before running analysis.');
+        return; 
+      }
+      addMessage('user', 'Initiating ML analysis pipeline...');
+      
+      // Show thinking indicator
+      const thinkingId = showThinkingIndicator();
+      
+      const fd = new FormData(); 
+      fd.append('metadata', files.metadata); 
+      fd.append('spectra', files.spectra);
+      try {
+        const uploadRes = await fetch(`${BACKEND}/upload`, { method: 'POST', body: fd });
+        const uploadData = await uploadRes.json();
+        
+        if (uploadData.status === 'ok') {
+          const predictRes = await fetch(`${BACKEND}/predict`, { method: 'POST' });
+          const data = await predictRes.json();
+          
+          console.log('Backend response:', data);
+          
+          // Remove thinking indicator
+          hideThinkingIndicator();
+          
+          if (data.error) {
+            addMessage('bot', '⚠️ Error: ' + data.error);
+            return;
+          }
+          
+          if (!data.totalSamples || !data.rf_r2 || !data.nn_r2) {
+            addMessage('bot', '⚠️ Error: Incomplete data from backend. Check console for details.');
+            console.error('Missing fields in response:', data);
+            return;
+          }
+          
+          addMessage('bot', `✅ Analysis Complete!\n\n📊 Dataset Information:\n• Total Samples: ${data.totalSamples}\n• Training Set: ${data.trainSamples} samples\n• Test Set: ${data.testSamples} samples\n\n📈 Redshift Statistics:\n• Mean: ${data.avgRedshift.toFixed(4)}\n• Std Dev: ${data.stdRedshift.toFixed(4)}\n• Range: [${data.minRedshift.toFixed(4)}, ${data.maxRedshift.toFixed(4)}]\n\n🌲 Random Forest Performance:\n• R² Score: ${data.rf_r2.toFixed(4)} (${data.rf_accuracy.toFixed(2)}%)\n• MSE: ${data.rf_mse.toFixed(6)}\n\n🧠 Neural Network Performance:\n• R² Score: ${data.nn_r2.toFixed(4)} (${data.nn_accuracy.toFixed(2)}%)\n• MSE: ${data.nn_mse.toFixed(6)}`);
+          
+          numericSummary.innerHTML = `
+            <div class="col-span-2 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border-2 border-indigo-100 card-hover">
+              <div class="flex items-center gap-2 mb-2">
+                <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+                <div class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Dataset</div>
+              </div>
+              <div class="text-3xl font-bold text-gray-800">${data.totalSamples}</div>
+              <div class="text-xs text-gray-600 mt-1">Train: ${data.trainSamples} • Test: ${data.testSamples}</div>
+            </div>
+            <div class="bg-white rounded-xl p-5 border-2 border-gray-100 card-hover">
+              <div class="flex items-center gap-2 mb-2">
+                <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>
+                <div class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Mean Z</div>
+              </div>
+              <div class="text-2xl font-bold text-gray-800">${data.avgRedshift.toFixed(4)}</div>
+              <div class="text-xs text-gray-600 mt-1">σ = ${data.stdRedshift.toFixed(4)}</div>
+            </div>
+            <div class="bg-white rounded-xl p-5 border-2 border-gray-100 card-hover">
+              <div class="flex items-center gap-2 mb-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-purple-600"></i>
+                <div class="text-xs font-semibold text-purple-600 uppercase tracking-wide">Range</div>
+              </div>
+              <div class="text-lg font-bold text-gray-800">${data.minRedshift.toFixed(3)} - ${data.maxRedshift.toFixed(3)}</div>
+            </div>
+          `;
+          
+          let plotsHTML = '';
+          
+          if (data.rf_plot) {
+            plotsHTML += `
+              <div class="bg-white rounded-xl p-6 border-2 border-gray-100 mb-5 card-hover animate-fade-in">
+                <div class="flex justify-between items-center mb-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                      <span class="text-white text-sm">🌲</span>
+                    </div>
+                    <div class="text-sm font-bold text-gray-700">Random Forest Regressor</div>
+                  </div>
+                  <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-200">
+                    R² = ${data.rf_r2.toFixed(4)}
+                  </div>
+                </div>
+                <img src="${data.rf_plot}" alt="Random Forest predictions" class="w-full h-auto object-contain rounded-lg border border-gray-200" />
+                <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
+                  <span class="text-gray-600">Mean Squared Error:</span>
+                  <span class="font-semibold text-gray-800">${data.rf_mse.toFixed(6)}</span>
+                </div>
+              </div>
+            `;
+          }
+          
+          if (data.nn_plot) {
+            plotsHTML += `
+              <div class="bg-white rounded-xl p-6 border-2 border-gray-100 mb-5 card-hover animate-fade-in">
+                <div class="flex justify-between items-center mb-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                      <span class="text-white text-sm">🧠</span>
+                    </div>
+                    <div class="text-sm font-bold text-gray-700">Neural Network (MLP)</div>
+                  </div>
+                  <div class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-200">
+                    R² = ${data.nn_r2.toFixed(4)}
+                  </div>
+                </div>
+                <img src="${data.nn_plot}" alt="Neural Network predictions" class="w-full h-auto object-contain rounded-lg border border-gray-200" />
+                <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
+                  <span class="text-gray-600">Mean Squared Error:</span>
+                  <span class="font-semibold text-gray-800">${data.nn_mse.toFixed(6)}</span>
+                </div>
+              </div>
+            `;
+          }
+          
+          pcaPlotWrap.innerHTML = plotsHTML;
+          pcaPlotWrap.classList.remove('hidden');
+          
+          resizeHandle.classList.remove('hidden');
+          resultsPane.classList.remove('hidden');
+          lucide.createIcons();
+        }
+      } catch (err) { 
+        // Remove thinking indicator on error
+        hideThinkingIndicator();
+        addMessage('bot', '⚠️ Backend error: ' + err.message); 
+        console.error('Full error:', err);
+      }
+    });
+
+    async function sendChatMessage(message) {
+      try {
+        addMessage('user', message);
+        
+        // Show thinking indicator
+        const thinkingId = showThinkingIndicator();
+        
+        // Send to backend
+        const response = await fetch(`${BACKEND}/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: message })
+        });
+        
+        const data = await response.json();
+        
+        // Remove thinking indicator
+        hideThinkingIndicator();
+        
+        if (data.response) {
+          addMessage('bot', data.response);
+        } else {
+          addMessage('bot', '⚠️ No response from server');
+        }
+      } catch (err) {
+        // Remove thinking indicator on error
+        hideThinkingIndicator();
+        addMessage('bot', '⚠️ Error connecting to chatbot: ' + err.message);
+        console.error('Chat error:', err);
+      }
+    }
+
+    msgSendBtn.addEventListener('click', () => { 
+      if (msgInput.value.trim()) {
+        const message = msgInput.value;
+        msgInput.value = ''; 
+        sendChatMessage(message);
+      }
+    });
+    
+    msgInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && msgInput.value.trim()) {
+        const message = msgInput.value;
+        msgInput.value = '';
+        sendChatMessage(message);
+      }
+    });
+
+    closeResults.addEventListener('click', () => {
+      resultsPane.classList.add('hidden');
+      resizeHandle.classList.add('hidden');
+    });
+
+    // Initialize
+    updateFileStatus();
+    addMessage('bot', '🤖 Welcome to Redshift Daisy! Upload your .npy files and click "Run Analysis" to begin ML-powered redshift predictions.');
+    lucide.createIcons();
+  </script>
+</body>
+</html>
